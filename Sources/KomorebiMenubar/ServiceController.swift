@@ -13,8 +13,8 @@ struct ServiceError: LocalizedError {
 /// Screen Recording grants instead of komorebi's/skhd's own (komorebi then dies with
 /// "failed to request screen capability"). As launchd jobs they are responsible for themselves.
 struct ServiceController: Sendable {
-    static let komorebiAgent = "com.zepocas.komorebi"
-    static let skhdAgent = "com.zepocas.skhd"
+    static let komorebiAgent = "io.github.zepocas.komorebi"
+    static let skhdAgent = "io.github.zepocas.skhd"
 
     let paths: Paths
 

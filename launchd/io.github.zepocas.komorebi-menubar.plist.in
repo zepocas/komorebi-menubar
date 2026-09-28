@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.zepocas.komorebi-menubar</string>
+    <string>io.github.zepocas.komorebi-menubar</string>
     <key>ProgramArguments</key>
     <array>
         <string>@APP@/Contents/MacOS/KomorebiMenubar</string>

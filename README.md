@@ -47,9 +47,9 @@ This installs three LaunchAgents into `~/Library/LaunchAgents` and loads them:
 
 | Agent | Runs | Behaviour |
 |---|---|---|
-| `com.zepocas.komorebi` | `komorebi --config <config dir>/active.json` | restarts after a crash; stays stopped after `komorebic stop` |
-| `com.zepocas.skhd` | `skhd -c <skhdrc>` | always kept running |
-| `com.zepocas.komorebi-menubar` | the app | restarts after a crash; stays quit after *Quit* |
+| `io.github.zepocas.komorebi` | `komorebi --config <config dir>/active.json` | restarts after a crash; stays stopped after `komorebic stop` |
+| `io.github.zepocas.skhd` | `skhd -c <skhdrc>` | always kept running |
+| `io.github.zepocas.komorebi-menubar` | the app | restarts after a crash; stays quit after *Quit* |
 
 This stops any komorebi or skhd you started by hand, then starts them under launchd.
 
@@ -108,7 +108,7 @@ restarts komorebi.
 - **Config directory:** `$KOMOREBI_CONFIG_HOME` if set, otherwise `~/.config/komorebi`. Set it
   before running `make agents`; the agents get the value written into them.
 - **skhd config:** `<config dir>/skhdrc` if it exists, otherwise `~/.config/skhd/skhdrc`.
-- **Agent names:** `com.zepocas.*`. To use your own prefix, rename them in `launchd/*.plist.in`,
+- **Agent names:** `io.github.zepocas.*`. To use your own prefix, rename them in `launchd/*.plist.in`,
   `scripts/install-agents.sh` and `ServiceController.swift`.
 - After changing any of the above, run `make agents` again.
 
@@ -120,7 +120,7 @@ menubar manager. On macOS 27, Thaw can remove other apps' items
 ([thaw-app/Thaw#1135](https://github.com/thaw-app/Thaw/issues/1135)). Quitting Thaw briefly tells
 you whether it's the cause.
 
-**"The com.zepocas.komorebi LaunchAgent isn't loaded".**
+**"The io.github.zepocas.komorebi LaunchAgent isn't loaded".**
 Restart and profile switching go through launchd. Run `make agents`.
 
 **komorebi doesn't come back after a restart.**
@@ -132,7 +132,7 @@ It's missing Accessibility access. Check `~/Library/Logs/skhd.log`.
 
 **Checking the agents.**
 ```sh
-launchctl print gui/$(id -u)/com.zepocas.komorebi | grep -E 'state|pid|last exit'
+launchctl print gui/$(id -u)/io.github.zepocas.komorebi | grep -E 'state|pid|last exit'
 ```
 
 ## Uninstall

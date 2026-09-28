@@ -11,7 +11,7 @@ final class StatusItemController {
     init(menu: NSMenu) {
         // A stable, unique name (instead of the default "Item-0") so macOS and menubar managers
         // like Thaw/Ice can remember this item's position and section.
-        item.autosaveName = "com.zepocas.komorebi-menubar.workspace"
+        item.autosaveName = "io.github.zepocas.komorebi-menubar.workspace"
         item.menu = menu
         showDisconnected()
     }

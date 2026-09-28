@@ -4,14 +4,20 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-AGENTS=(com.zepocas.komorebi com.zepocas.skhd com.zepocas.komorebi-menubar)
+AGENTS=(io.github.zepocas.komorebi io.github.zepocas.skhd io.github.zepocas.komorebi-menubar)
 AGENT_DIR="$HOME/Library/LaunchAgents"
 DOMAIN="gui/$(id -u)"
+# Labels used before the io.github.zepocas.* rename; always removed.
+LEGACY_AGENTS=(com.zepocas.komorebi com.zepocas.skhd com.zepocas.komorebi-menubar com.zepocas.komorebi-indicator)
+
+remove_agent() {
+    launchctl bootout "$DOMAIN/$1" 2>/dev/null && echo "Unloaded $1" || true
+    rm -f "$AGENT_DIR/$1.plist"
+}
 
 if [[ "${1:-}" == "--uninstall" ]]; then
-    for label in "${AGENTS[@]}"; do
-        launchctl bootout "$DOMAIN/$label" 2>/dev/null && echo "Unloaded $label" || true
-        rm -f "$AGENT_DIR/$label.plist"
+    for label in "${AGENTS[@]}" "${LEGACY_AGENTS[@]}"; do
+        remove_agent "$label"
     done
     echo "Removed. Start komorebi/skhd by hand again (komorebic start, skhd -c ...)."
     exit 0
@@ -28,6 +34,10 @@ APP="/Applications/KomorebiMenubar.app"
 
 [[ -e "$CONFIG_DIR/active.json" ]] || ln -s komorebi.json "$CONFIG_DIR/active.json"
 [[ -d "$APP" ]] || { echo "Missing $APP. Run 'make install' first." >&2; exit 1; }
+
+for label in "${LEGACY_AGENTS[@]}"; do
+    remove_agent "$label"
+done
 
 # Stop copies started by hand so the launchd ones don't collide with them.
 if pgrep -x komorebi >/dev/null; then
