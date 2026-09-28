@@ -3,13 +3,15 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleIdentifier</key>
-    <string>com.zepocas.komorebi-indicator</string>
+    <string>com.zepocas.komorebi-menubar</string>
     <key>CFBundleName</key>
-    <string>Komorebi Indicator</string>
+    <string>Komorebi Menubar</string>
     <key>CFBundleDisplayName</key>
-    <string>Komorebi Indicator</string>
+    <string>Komorebi Menubar</string>
     <key>CFBundleExecutable</key>
-    <string>KomorebiIndicator</string>
+    <string>KomorebiMenubar</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>

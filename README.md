@@ -1,4 +1,4 @@
-# Komorebi Indicator
+# Komorebi Menubar
 
 A small native menubar item for [komorebi for Mac](https://komorebi-for-mac.lgug2z.com), inspired
 by AeroSpace's built-in workspace indicator.
@@ -6,7 +6,7 @@ by AeroSpace's built-in workspace indicator.
 - Shows the focused workspace of **every monitor**, e.g. `2 │ 5`. The focused monitor is in bold.
   It updates instantly because komorebi pushes events to it.
 - Its menu can **switch komorebi config profiles** and **restart komorebi and skhd**.
-- Optional LaunchAgents start **komorebi, skhd and the indicator at login**.
+- Optional LaunchAgents start **komorebi, skhd and the menubar app at login**.
 
 It's plain Swift and AppKit with no dependencies. It uses almost no CPU while idle and needs no
 permissions of its own.
@@ -24,10 +24,10 @@ permissions of its own.
 ### 1. Build and install the app
 
 ```sh
-git clone git@github.com:zepocas/komorebi-indicator.git
-cd komorebi-indicator
+git clone git@github.com:zepocas/komorebi-menubar.git
+cd komorebi-menubar
 make test      # optional: run the unit tests
-make run       # builds KomorebiIndicator.app, installs it to /Applications and opens it
+make run       # builds KomorebiMenubar.app, installs it to /Applications and opens it
 ```
 
 The workspace number should now appear in the menubar. The app must live in `/Applications`.
@@ -49,7 +49,7 @@ This installs three LaunchAgents into `~/Library/LaunchAgents` and loads them:
 |---|---|---|
 | `com.zepocas.komorebi` | `komorebi --config <config dir>/active.json` | restarts after a crash; stays stopped after `komorebic stop` |
 | `com.zepocas.skhd` | `skhd -c <skhdrc>` | always kept running |
-| `com.zepocas.komorebi-indicator` | the app | restarts after a crash; stays quit after *Quit* |
+| `com.zepocas.komorebi-menubar` | the app | restarts after a crash; stays quit after *Quit* |
 
 This stops any komorebi or skhd you started by hand, then starts them under launchd.
 
@@ -61,12 +61,12 @@ komorebi and skhd now run as their own processes instead of under your terminal.
 - **Accessibility:** `komorebi` (e.g. `~/.local/bin/komorebi`) and `skhd` (e.g. `/opt/homebrew/bin/skhd`)
 - **Screen Recording:** `komorebi`
 
-Then use **Restart komorebi** / **Restart skhd** from the indicator menu. If you upgrade skhd with
+Then use **Restart komorebi** / **Restart skhd** from the Komorebi Menubar menu. If you upgrade skhd with
 Homebrew, its real path changes and you may need to grant it again.
 
 ### 4. Menubar managers (Thaw, Ice, Bartender)
 
-New items can land in the hidden section. Drag **Komorebi Indicator** into the visible section,
+New items can land in the hidden section. Drag **Komorebi Menubar** into the visible section,
 using the manager's layout settings or ⌘-drag in the menubar.
 
 ## Usage
@@ -74,7 +74,7 @@ using the manager's layout settings or ⌘-drag in the menubar.
 **The label**
 - One segment per monitor, in komorebi's monitor order.
 - Each segment is the workspace `name` from your config, or its number if it has no name.
-- A dimmed icon means komorebi isn't running. The indicator reconnects on its own when komorebi comes back.
+- A dimmed icon means komorebi isn't running. It reconnects on its own when komorebi comes back.
 - macOS shows the same item on every display's menubar, so the label always lists all monitors.
 
 **The menu**
@@ -138,7 +138,7 @@ launchctl print gui/$(id -u)/com.zepocas.komorebi | grep -E 'state|pid|last exit
 ## Uninstall
 
 ```sh
-make uninstall        # unloads the agents and removes /Applications/KomorebiIndicator.app
+make uninstall        # unloads the agents and removes /Applications/KomorebiMenubar.app
 ```
 
 After this, start komorebi and skhd by hand again (`komorebic start`, `skhd -c …`). You can
@@ -146,7 +146,7 @@ delete `<config dir>/active.json` if you don't need it.
 
 ## How it works
 
-- **Live updates:** the app listens on `komorebi-indicator.sock` in
+- **Live updates:** the app listens on `komorebi-menubar.sock` in
   `~/Library/Application Support/komorebi/` and runs `komorebic subscribe-socket` once. komorebi
   then opens one connection per event and writes a single `{event, state}` JSON document. The app
   redraws only when the label text changes, because komorebi sends a steady stream of window
@@ -156,7 +156,7 @@ delete `<config dir>/active.json` if you don't need it.
   loads `komorebic state` straight away.
 - **Why restarts go through launchd:** if the app launched komorebi or skhd itself, macOS would
   treat the app as their "responsible process" and check *the app's* Accessibility and Screen
-  Recording permissions. Run by launchd, they use their own permissions, so the indicator needs none.
+  Recording permissions. Run by launchd, they use their own permissions, so the menubar app needs none.
 
 ### komorebi-for-mac quirks this works around
 
@@ -169,11 +169,12 @@ delete `<config dir>/active.json` if you don't need it.
 ## Development
 
 ```
-Sources/IndicatorCore/        decoding, label formatting, profile discovery (unit tested)
-Sources/KomorebiIndicator/    AppKit app: socket subscriber, process watcher, menu, launchd control
-Tests/IndicatorCoreTests/     Swift Testing suite and a JSON fixture
+Sources/MenubarCore/        decoding, label formatting, profile discovery (unit tested)
+Sources/KomorebiMenubar/    AppKit app: socket subscriber, process watcher, menu, launchd control
+Tests/MenubarCoreTests/     Swift Testing suite and a JSON fixture
 launchd/                      LaunchAgent templates (@PLACEHOLDERS@ filled in by install-agents.sh)
-scripts/                      bundle.sh (builds the .app), install-agents.sh
+Resources/                    Info.plist, AppIcon.svg (icon source) and the generated AppIcon.icns
+scripts/                      bundle.sh (builds the .app), install-agents.sh, make-icon.sh
 ```
 
 | Command | Does |
@@ -184,6 +185,7 @@ scripts/                      bundle.sh (builds the .app), install-agents.sh
 | `make run` | install and open |
 | `make agents` / `make uninstall-agents` | install / remove the LaunchAgents |
 | `make uninstall` | remove the agents and the app |
+| `make icon` | regenerate `AppIcon.icns` from `AppIcon.svg` |
 | `make clean` | delete build output |
 
 When the agents are loaded, `make install` is enough to update: launchd relaunches the new build.

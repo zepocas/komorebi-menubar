@@ -1,7 +1,7 @@
 import Foundation
 
 // Minimal views of komorebi's JSON. We only decode the fields we render, so unrelated
-// schema changes in komorebi don't break the indicator.
+// schema changes in komorebi don't break the menubar app.
 
 /// komorebi's `Ring`: a list plus the index of the focused element.
 public struct Ring<Element: Decodable & Sendable>: Decodable, Sendable {

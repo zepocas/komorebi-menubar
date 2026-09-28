@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import IndicatorCore
+@testable import MenubarCore
 
 @Suite struct DecodingTests {
     @Test func decodesNotificationAndIgnoresUnknownFields() throws {

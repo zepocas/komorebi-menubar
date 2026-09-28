@@ -2,16 +2,16 @@
 import PackageDescription
 
 let package = Package(
-    name: "KomorebiIndicator",
+    name: "KomorebiMenubar",
     platforms: [.macOS(.v14)],
     targets: [
         // Pure logic (decoding, label formatting, profile discovery) so it can be unit tested.
-        .target(name: "IndicatorCore"),
+        .target(name: "MenubarCore"),
         // The AppKit menubar app.
-        .executableTarget(name: "KomorebiIndicator", dependencies: ["IndicatorCore"]),
+        .executableTarget(name: "KomorebiMenubar", dependencies: ["MenubarCore"]),
         .testTarget(
-            name: "IndicatorCoreTests",
-            dependencies: ["IndicatorCore"],
+            name: "MenubarCoreTests",
+            dependencies: ["MenubarCore"],
             resources: [.copy("Fixtures")]
         ),
     ]

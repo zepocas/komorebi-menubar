@@ -5,7 +5,7 @@
     <key>Label</key>
     <string>com.zepocas.komorebi</string>
     <!-- The daemon itself, not `komorebic start` (which forks it away from launchd and mangles
-         --config). active.json is the profile symlink managed by the indicator. -->
+         --config). active.json is the profile symlink managed by the menubar app. -->
     <key>ProgramArguments</key>
     <array>
         <string>@KOMOREBI@</string>

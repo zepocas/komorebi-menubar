@@ -1,5 +1,5 @@
 import Foundation
-import IndicatorCore
+import MenubarCore
 
 /// Manages the `active.json` symlink in the komorebi config directory. The symlink is the single
 /// source of truth for the selected profile, so launchd and manual restarts pick it up too.

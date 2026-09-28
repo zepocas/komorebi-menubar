@@ -1,4 +1,4 @@
-APP_NAME    := KomorebiIndicator
+APP_NAME    := KomorebiMenubar
 INSTALL_DIR := /Applications
 APP_PATH    := $(INSTALL_DIR)/$(APP_NAME).app
 
@@ -12,7 +12,7 @@ TEST_FLAGS := -Xswiftc -F -Xswiftc $(CLT_FRAMEWORKS) \
 	-Xlinker -F -Xlinker $(CLT_FRAMEWORKS) -Xlinker -rpath -Xlinker $(CLT_FRAMEWORKS)
 endif
 
-.PHONY: build test bundle install run uninstall agents uninstall-agents clean
+.PHONY: build test bundle install run uninstall agents uninstall-agents icon clean
 
 build:
 	swift build
@@ -39,12 +39,16 @@ uninstall: uninstall-agents
 	rm -rf "$(APP_PATH)"
 	@echo "Removed $(APP_PATH)"
 
-# Starts komorebi, skhd and the indicator at login through launchd.
+# Starts komorebi, skhd and the menubar app at login through launchd.
 agents: install
 	scripts/install-agents.sh
 
 uninstall-agents:
 	scripts/install-agents.sh --uninstall
+
+# Regenerates Resources/AppIcon.icns after editing Resources/AppIcon.svg.
+icon:
+	scripts/make-icon.sh
 
 clean:
 	rm -rf .build build

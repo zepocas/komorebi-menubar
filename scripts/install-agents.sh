@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Installs (or with --uninstall removes) LaunchAgents that start komorebi, skhd and the
-# indicator at login. Rendered from launchd/*.plist.in into ~/Library/LaunchAgents.
+# menubar app at login. Rendered from launchd/*.plist.in into ~/Library/LaunchAgents.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-AGENTS=(com.zepocas.komorebi com.zepocas.skhd com.zepocas.komorebi-indicator)
+AGENTS=(com.zepocas.komorebi com.zepocas.skhd com.zepocas.komorebi-menubar)
 AGENT_DIR="$HOME/Library/LaunchAgents"
 DOMAIN="gui/$(id -u)"
 
@@ -24,7 +24,7 @@ KOMOREBI="$(PATH="$SEARCH_PATH" command -v komorebi)"
 SKHD="$(PATH="$SEARCH_PATH" command -v skhd)"
 SKHD_CONFIG="$CONFIG_DIR/skhdrc"
 [[ -f "$SKHD_CONFIG" ]] || SKHD_CONFIG="$HOME/.config/skhd/skhdrc"
-APP="/Applications/KomorebiIndicator.app"
+APP="/Applications/KomorebiMenubar.app"
 
 [[ -e "$CONFIG_DIR/active.json" ]] || ln -s komorebi.json "$CONFIG_DIR/active.json"
 [[ -d "$APP" ]] || { echo "Missing $APP. Run 'make install' first." >&2; exit 1; }
@@ -36,7 +36,7 @@ if pgrep -x komorebi >/dev/null; then
     for _ in {1..25}; do pgrep -x komorebi >/dev/null || break; sleep 0.2; done
 fi
 pkill -x skhd 2>/dev/null && echo "Stopped running skhd" || true
-pkill -x KomorebiIndicator 2>/dev/null || true
+pkill -x KomorebiMenubar 2>/dev/null || true
 
 mkdir -p "$AGENT_DIR" "$HOME/Library/Logs"
 for label in "${AGENTS[@]}"; do
@@ -57,11 +57,11 @@ done
 
 cat <<MSG
 
-Done. komorebi, skhd and the indicator now start at login.
+Done. komorebi, skhd and the menubar app now start at login.
 They now run as their own processes (not under your terminal), so macOS may ask for permissions.
 In System Settings → Privacy & Security:
   • Accessibility:     $KOMOREBI and $SKHD
   • Screen Recording:  $KOMOREBI
 If one doesn't come up, check ~/Library/Logs/{komorebi,skhd}.log, grant the permission, then
-use "Restart" from the indicator menu.
+use "Restart" from the Komorebi Menubar menu.
 MSG

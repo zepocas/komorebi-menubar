@@ -1,5 +1,5 @@
 import AppKit
-import IndicatorCore
+import MenubarCore
 
 /// The menu is rebuilt each time it opens so the status and profile list are always current.
 extension AppDelegate: NSMenuDelegate {
@@ -23,7 +23,7 @@ extension AppDelegate: NSMenuDelegate {
         menu.addItem(ActionMenuItem(title: "Open Config Folder") { [paths] in
             NSWorkspace.shared.open(paths.configDir)
         })
-        menu.addItem(ActionMenuItem(title: "Quit Komorebi Indicator", keyEquivalent: "q") {
+        menu.addItem(ActionMenuItem(title: "Quit Komorebi Menubar", keyEquivalent: "q") {
             NSApp.terminate(nil)
         })
     }

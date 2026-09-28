@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Komorebi Menubar app icon: a watermelon slice over a tiled (BSP) window layout. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#23362e"/>
+      <stop offset="1" stop-color="#101b16"/>
+    </linearGradient>
+    <radialGradient id="flesh" cx="0.5" cy="0" r="0.9">
+      <stop offset="0" stop-color="#ff7a7a"/>
+      <stop offset="1" stop-color="#e5383b"/>
+    </radialGradient>
+  </defs>
+
+  <!-- macOS icon grid: 824pt body inset 100pt, continuous-corner radius ~185pt. -->
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)"/>
+
+  <!-- Tiled panes: one tall pane on the left, the right side split in two. -->
+  <g fill="#ffffff" fill-opacity="0.06">
+    <rect x="160" y="160" width="340" height="704" rx="36"/>
+    <rect x="524" y="160" width="340" height="340" rx="36"/>
+    <rect x="524" y="524" width="340" height="340" rx="36"/>
+  </g>
+
+  <!-- Watermelon slice: rind, pith and flesh as nested half discs. -->
+  <g transform="rotate(-12 512 520)">
+    <path d="M 194 430 A 318 318 0 0 0 830 430 Z" fill="#1f6b2e"/>
+    <path d="M 216 430 A 296 296 0 0 0 808 430 Z" fill="#7cc257"/>
+    <path d="M 232 430 A 280 280 0 0 0 792 430 Z" fill="#eaf6cf"/>
+    <path d="M 250 430 A 262 262 0 0 0 774 430 Z" fill="url(#flesh)"/>
+    <g fill="#1c1c1e">
+      <path d="M 0 -20 C 11 -20 13 2 0 20 C -13 2 -11 -20 0 -20 Z" transform="translate(660.4 522.7) rotate(-58)"/>
+      <path d="M 0 -20 C 11 -20 13 2 0 20 C -13 2 -11 -20 0 -20 Z" transform="translate(594.2 584.5) rotate(-28)"/>
+      <path d="M 0 -20 C 11 -20 13 2 0 20 C -13 2 -11 -20 0 -20 Z" transform="translate(512.0 605.0) rotate(0)"/>
+      <path d="M 0 -20 C 11 -20 13 2 0 20 C -13 2 -11 -20 0 -20 Z" transform="translate(429.8 584.5) rotate(28)"/>
+      <path d="M 0 -20 C 11 -20 13 2 0 20 C -13 2 -11 -20 0 -20 Z" transform="translate(363.6 522.7) rotate(58)"/>
+      <path d="M 0 -20 C 11 -20 13 2 0 20 C -13 2 -11 -20 0 -20 Z" transform="translate(572.2 516.0) rotate(-35)"/>
+      <path d="M 0 -20 C 11 -20 13 2 0 20 C -13 2 -11 -20 0 -20 Z" transform="translate(512.0 535.0) rotate(0)"/>
+      <path d="M 0 -20 C 11 -20 13 2 0 20 C -13 2 -11 -20 0 -20 Z" transform="translate(451.8 516.0) rotate(35)"/>
+    </g>
+  </g>
+</svg>

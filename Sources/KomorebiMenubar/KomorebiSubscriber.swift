@@ -1,14 +1,14 @@
 import Foundation
-import IndicatorCore
+import MenubarCore
 
 /// Listens on a Unix socket in komorebi's data directory. After `komorebic subscribe-socket <name>`,
 /// komorebi opens one connection per event, writes a single `{event, state}` JSON document (no
 /// newline framing) and closes it, so each connection is read until EOF and decoded on its own.
 final class KomorebiSubscriber: @unchecked Sendable {
-    static let socketName = "komorebi-indicator.sock"
+    static let socketName = "komorebi-menubar.sock"
 
     private let socketPath: String
-    private let queue = DispatchQueue(label: "com.zepocas.komorebi-indicator.subscriber")
+    private let queue = DispatchQueue(label: "com.zepocas.komorebi-menubar.subscriber")
     private let onState: @Sendable (KomorebiState) -> Void
     private var listenFD: Int32 = -1
     private var source: DispatchSourceRead?

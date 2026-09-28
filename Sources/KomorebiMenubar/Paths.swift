@@ -1,5 +1,5 @@
 import Foundation
-import IndicatorCore
+import MenubarCore
 
 /// Absolute locations of binaries and config. GUI apps (and launchd jobs) don't get the shell's
 /// PATH, so `~/.local/bin` etc. are searched explicitly instead of relying on the environment.

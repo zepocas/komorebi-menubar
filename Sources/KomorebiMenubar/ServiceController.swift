@@ -1,5 +1,5 @@
 import Foundation
-import IndicatorCore
+import MenubarCore
 
 struct ServiceError: LocalizedError {
     let message: String
@@ -80,7 +80,7 @@ struct ServiceController: Sendable {
     func requireAgent(_ label: String) async throws {
         let loaded = await Shell.run(paths.launchctl, ["print", "gui/\(getuid())/\(label)"], environment: paths.childEnvironment).succeeded
         guard loaded else {
-            throw ServiceError(message: "The \(label) LaunchAgent isn't loaded. Run `make agents` in the komorebi-indicator repo so launchd can manage it.")
+            throw ServiceError(message: "The \(label) LaunchAgent isn't loaded. Run `make agents` in the komorebi-menubar repo so launchd can manage it.")
         }
     }
 
