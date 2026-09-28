@@ -23,7 +23,15 @@ permissions of its own.
 
 ## Setup
 
-### 1. Build and install the app
+### 1. Install the app
+
+**With Homebrew:**
+
+```sh
+brew install --cask zepocas/tap/komorebi-menubar
+```
+
+**Or from source:**
 
 ```sh
 git clone git@github.com:zepocas/komorebi-menubar.git
@@ -32,9 +40,9 @@ make test      # optional: run the unit tests
 make run       # builds KomorebiMenubar.app, installs it to /Applications and opens it
 ```
 
-The workspace number should now appear in the menubar. The app must live in `/Applications`.
-On macOS 27, menubar managers like Thaw can drop items from apps in `~/Applications`
-(see [Troubleshooting](#troubleshooting)).
+The workspace number should now appear in the menubar. The app must live in `/Applications`, which
+both methods do. On macOS 27, menubar managers like Thaw can drop items from apps in
+`~/Applications` (see [Troubleshooting](#troubleshooting)).
 
 With only this step, the icon and profile list work. Restarting komorebi or skhd from the menu,
 and switching profiles while komorebi runs, need step 2.
@@ -42,8 +50,12 @@ and switching profiles while komorebi runs, need step 2.
 ### 2. Start everything at login (recommended)
 
 ```sh
-make agents
+make agents                  # from a source checkout
+scripts/install-agents.sh    # Homebrew install: run from a clone, it uses the app in /Applications
 ```
+
+`make agents` rebuilds and reinstalls the app first. If you installed with Homebrew, run
+`scripts/install-agents.sh` instead so the cask's app stays in place.
 
 This installs three LaunchAgents into `~/Library/LaunchAgents` and loads them:
 
@@ -141,6 +153,7 @@ launchctl print gui/$(id -u)/io.github.zepocas.komorebi | grep -E 'state|pid|las
 
 ```sh
 make uninstall        # unloads the agents and removes /Applications/KomorebiMenubar.app
+brew uninstall --cask komorebi-menubar    # if you installed with Homebrew
 ```
 
 After this, start komorebi and skhd by hand again (`komorebic start`, `skhd -c …`). You can
@@ -176,7 +189,8 @@ Sources/KomorebiMenubar/    AppKit app: socket subscriber, process watcher, menu
 Tests/MenubarCoreTests/     Swift Testing suite and a JSON fixture
 launchd/                      LaunchAgent templates (@PLACEHOLDERS@ filled in by install-agents.sh)
 Resources/                    Info.plist, AppIcon.svg (icon source) and the generated AppIcon.icns
-scripts/                      bundle.sh (builds the .app), install-agents.sh, make-icon.sh
+packaging/                    Homebrew cask template
+scripts/                      bundle.sh (builds the .app), install-agents.sh, make-icon.sh, bump-cask.sh
 ```
 
 | Command | Does |
@@ -191,6 +205,18 @@ scripts/                      bundle.sh (builds the .app), install-agents.sh, ma
 | `make clean` | delete build output |
 
 When the agents are loaded, `make install` is enough to update: launchd relaunches the new build.
+
+## Releasing
+
+1. Tag and push: `git tag v0.2.0 && git push origin v0.2.0`. The **Release** workflow tests,
+   builds (version stamped from the tag), and attaches `KomorebiMenubar-0.2.0.zip` to the GitHub
+   Release, creating the release if it doesn't exist. To rebuild an existing tag:
+   `gh workflow run release.yml -f tag=v0.2.0`.
+2. Update the cask: `scripts/bump-cask.sh 0.2.0`. It downloads the zip, writes
+   `Casks/komorebi-menubar.rb` (from `packaging/komorebi-menubar.rb.in`) into a clone of
+   [zepocas/homebrew-tap](https://github.com/zepocas/homebrew-tap) at `~/code/homebrew-tap`
+   (override with `TAP_DIR`), and commits it.
+3. Push the tap: `git -C ~/code/homebrew-tap push`.
 
 ## License
 

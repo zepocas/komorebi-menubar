@@ -1,0 +1,47 @@
+name: Release
+
+# Builds the app for a v* tag and attaches the zip to its GitHub Release.
+# Run it by hand to (re)build an existing tag: gh workflow run release.yml -f tag=v0.1
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to build, e.g. v0.1
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-26
+    timeout-minutes: 20
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+          fetch-depth: 0 # tags and full history, for the version and build number
+
+      - name: Test
+        run: make test
+
+      - name: Bundle
+        run: VERSION="${TAG#v}" make bundle
+
+      - name: Zip
+        run: |
+          ZIP="KomorebiMenubar-${TAG#v}.zip"
+          ditto -c -k --sequesterRsrc --keepParent build/KomorebiMenubar.app "$ZIP"
+          shasum -a 256 "$ZIP" | tee "$ZIP.sha256"
+          echo "ZIP=$ZIP" >> "$GITHUB_ENV"
+
+      - name: Publish
+        run: |
+          gh release view "$TAG" >/dev/null 2>&1 \
+            || gh release create "$TAG" --verify-tag --generate-notes --title "$TAG"
+          gh release upload "$TAG" "$ZIP" "$ZIP.sha256" --clobber
