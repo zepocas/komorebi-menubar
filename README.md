@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="Resources/AppIcon.svg" width="160" alt="Komorebi Menubar icon: a watermelon slice over tiled windows">
+</p>
+
 # Komorebi Menubar
 
 [![CI](https://github.com/zepocas/komorebi-menubar/actions/workflows/ci.yml/badge.svg)](https://github.com/zepocas/komorebi-menubar/actions/workflows/ci.yml)
