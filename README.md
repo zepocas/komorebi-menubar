@@ -1,5 +1,7 @@
 # Komorebi Menubar
 
+[![CI](https://github.com/zepocas/komorebi-menubar/actions/workflows/ci.yml/badge.svg)](https://github.com/zepocas/komorebi-menubar/actions/workflows/ci.yml)
+
 A small native menubar item for [komorebi for Mac](https://komorebi-for-mac.lgug2z.com), inspired
 by AeroSpace's built-in workspace indicator.
 
