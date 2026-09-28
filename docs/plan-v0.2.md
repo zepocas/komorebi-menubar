@@ -24,6 +24,9 @@ Decisions from the design review on 2026-09-28. Each phase ends with a check.
 
 ## Phases
 
+> **Order changed (2026-09-28):** phase 4 (release flow) moves ahead of phases 2 and 3, which are
+> on hold until releases run smoothly. The first Homebrew release is the existing `v0.1` tag.
+
 ### 0 · Housekeeping
 - Rename `com.zepocas.*` to `io.github.zepocas.*` everywhere, and add cleanup of the legacy agents.
 - Remove the two `o` bindings from `~/.config/komorebi/skhdrc`, then restart skhd.
