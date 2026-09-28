@@ -153,7 +153,7 @@ launchctl print gui/$(id -u)/io.github.zepocas.komorebi | grep -E 'state|pid|las
 
 ```sh
 make uninstall        # unloads the agents and removes /Applications/KomorebiMenubar.app
-brew uninstall --cask komorebi-menubar    # if you installed with Homebrew
+brew uninstall --cask --zap komorebi-menubar    # if you installed with Homebrew (--zap also removes its login agent)
 ```
 
 After this, start komorebi and skhd by hand again (`komorebic start`, `skhd -c …`). You can
