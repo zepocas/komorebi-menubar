@@ -8,7 +8,7 @@ final class KomorebiSubscriber: @unchecked Sendable {
     static let socketName = "komorebi-menubar.sock"
 
     private let socketPath: String
-    private let queue = DispatchQueue(label: "com.zepocas.komorebi-menubar.subscriber")
+    private let queue = DispatchQueue(label: "io.github.zepocas.komorebi-menubar.subscriber")
     private let onState: @Sendable (KomorebiState) -> Void
     private var listenFD: Int32 = -1
     private var source: DispatchSourceRead?
