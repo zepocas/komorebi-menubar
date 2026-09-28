@@ -1,0 +1,37 @@
+{
+  "event": {"type": "FocusWorkspaceNumber", "content": 1},
+  "state": {
+    "is_paused": false,
+    "mouse_follows_focus": true,
+    "monitor_usr_idx_map": {},
+    "monitors": {
+      "focused": 1,
+      "elements": [
+        {
+          "id": 1,
+          "device": "Built-in Retina Display",
+          "workspaces": {
+            "focused": 1,
+            "elements": [
+              {"name": "1", "layout": {"Default": "BSP"}, "containers": {"elements": [], "focused": 0}},
+              {"name": "2", "layout": {"Default": "BSP"}, "containers": {"elements": [], "focused": 0}},
+              {"name": "3", "layout": {"Default": "BSP"}, "containers": {"elements": [], "focused": 0}}
+            ]
+          }
+        },
+        {
+          "id": 2,
+          "device": "External Display",
+          "workspaces": {
+            "focused": 2,
+            "elements": [
+              {"name": "4", "containers": {"elements": [], "focused": 0}},
+              {"name": "5", "containers": {"elements": [], "focused": 0}},
+              {"name": null, "containers": {"elements": [], "focused": 0}}
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

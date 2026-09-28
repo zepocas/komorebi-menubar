@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.zepocas.komorebi-indicator</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>@APP@/Contents/MacOS/KomorebiIndicator</string>
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>KOMOREBI_CONFIG_HOME</key>
+        <string>@CONFIG_DIR@</string>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <!-- Relaunch after a crash; "Quit" from the menu is a clean exit and stays quit. -->
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    <key>ProcessType</key>
+    <string>Interactive</string>
+    <key>LimitLoadToSessionType</key>
+    <string>Aqua</string>
+    <key>StandardOutPath</key>
+    <string>@HOME@/Library/Logs/komorebi-indicator.log</string>
+    <key>StandardErrorPath</key>
+    <string>@HOME@/Library/Logs/komorebi-indicator.log</string>
+</dict>
+</plist>

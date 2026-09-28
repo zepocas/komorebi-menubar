@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.zepocas.komorebi</string>
+    <!-- The daemon itself, not `komorebic start` (which forks it away from launchd and mangles
+         --config). active.json is the profile symlink managed by the indicator. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>@KOMOREBI@</string>
+        <string>--config</string>
+        <string>@CONFIG_DIR@/active.json</string>
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>KOMOREBI_CONFIG_HOME</key>
+        <string>@CONFIG_DIR@</string>
+        <key>PATH</key>
+        <string>@PATH@</string>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <!-- Restart after a crash, but stay stopped after `komorebic stop` (clean exit). -->
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+    <key>ProcessType</key>
+    <string>Interactive</string>
+    <key>LimitLoadToSessionType</key>
+    <string>Aqua</string>
+    <key>StandardOutPath</key>
+    <string>@HOME@/Library/Logs/komorebi.log</string>
+    <key>StandardErrorPath</key>
+    <string>@HOME@/Library/Logs/komorebi.log</string>
+</dict>
+</plist>
