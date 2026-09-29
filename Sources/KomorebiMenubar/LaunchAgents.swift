@@ -93,7 +93,7 @@ struct LaunchAgents: Sendable {
         var environment = ["KOMOREBI_CONFIG_HOME": paths.configDir.path]
         if agent != .menubar {
             // skhd runs its bindings through a shell; both need the PATH that has komorebic.
-            environment["PATH"] = paths.searchPath
+            environment["PATH"] = paths.agentPath
         }
         let plist = LaunchAgentPlist.make(
             kind: agent.kind,
