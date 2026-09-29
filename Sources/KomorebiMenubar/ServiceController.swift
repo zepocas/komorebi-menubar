@@ -6,17 +6,16 @@ struct ServiceError: LocalizedError {
     var errorDescription: String? { message }
 }
 
-/// Talks to komorebi (through `komorebic`) and restarts komorebi/skhd through launchd.
+/// Talks to komorebi (through `komorebic`) and starts/restarts komorebi and skhd through launchd.
 ///
-/// Restarts only go through the LaunchAgents in `launchd/`. If this app spawned the daemons itself,
-/// macOS would treat the app as their "responsible process" and check *its* Accessibility and
-/// Screen Recording grants instead of komorebi's/skhd's own (komorebi then dies with
-/// "failed to request screen capability"). As launchd jobs they are responsible for themselves.
+/// Starts only go through our LaunchAgents (see LaunchAgents), installed on demand. If this app
+/// spawned the daemons itself, macOS would treat the app as their "responsible process" and check
+/// *its* Accessibility and Screen Recording grants instead of komorebi's/skhd's own (komorebi then
+/// dies with "failed to request screen capability"). As launchd jobs they are responsible for
+/// themselves.
 struct ServiceController: Sendable {
-    static let komorebiAgent = "io.github.zepocas.komorebi"
-    static let skhdAgent = "io.github.zepocas.skhd"
-
     let paths: Paths
+    var agents: LaunchAgents { LaunchAgents(paths: paths) }
 
     // MARK: komorebi
 
@@ -30,8 +29,8 @@ struct ServiceController: Sendable {
     }
 
     func restartKomorebi() async throws {
-        // Check before stopping anything, so a missing agent doesn't leave komorebi down.
-        try await requireAgent(Self.komorebiAgent)
+        // Before stopping anything, so a missing komorebi binary doesn't leave komorebi down.
+        try agents.prepare(.komorebi)
 
         if let pid = ProcessLookup.pid(named: "komorebi") {
             // `stop` restores hidden windows before exiting, which a plain kill wouldn't. komorebi can
@@ -43,7 +42,9 @@ struct ServiceController: Sendable {
                 try await waitFor("komorebi to exit", timeout: .seconds(5)) { ProcessLookup.pid(named: "komorebi") == nil }
             }
         }
-        try await kickstart(Self.komorebiAgent)
+        // Loading an agent that starts at login already starts komorebi; kickstart covers the rest.
+        try await agents.load(.komorebi)
+        try await kickstart(.komorebi, killingRunning: false)
         try await waitFor("komorebi to start (see ~/Library/Logs/komorebi.log)", timeout: .seconds(10)) {
             ProcessLookup.pid(named: "komorebi") != nil
         }
@@ -52,8 +53,15 @@ struct ServiceController: Sendable {
     // MARK: skhd
 
     func restartSkhd() async throws {
-        try await requireAgent(Self.skhdAgent)
-        try await kickstart(Self.skhdAgent)
+        try await agents.requireNoForeignSkhd()
+        try agents.prepare(.skhd)
+        if await !agents.isLoaded(.skhd), let pid = ProcessLookup.pid(named: "skhd") {
+            // Started by hand: stop it so launchd's copy doesn't run next to it.
+            kill(pid, SIGTERM)
+            try await waitFor("skhd to exit", timeout: .seconds(5)) { ProcessLookup.pid(named: "skhd") == nil }
+        }
+        try await agents.load(.skhd)
+        try await kickstart(.skhd, killingRunning: true)
 
         try await waitFor("skhd to start (see ~/Library/Logs/skhd.log)", timeout: .seconds(5)) {
             ProcessLookup.pid(named: "skhd") != nil
@@ -77,17 +85,11 @@ struct ServiceController: Sendable {
         return result
     }
 
-    func requireAgent(_ label: String) async throws {
-        let loaded = await Shell.run(paths.launchctl, ["print", "gui/\(getuid())/\(label)"], environment: paths.childEnvironment).succeeded
-        guard loaded else {
-            throw ServiceError(message: "The \(label) LaunchAgent isn't loaded. Run `make agents` in the komorebi-menubar repo so launchd can manage it.")
-        }
-    }
-
-    private func kickstart(_ label: String) async throws {
-        let result = await Shell.run(paths.launchctl, ["kickstart", "-k", "gui/\(getuid())/\(label)"], environment: paths.childEnvironment)
+    private func kickstart(_ agent: LaunchAgents.Agent, killingRunning: Bool) async throws {
+        let target = "gui/\(getuid())/\(agent.label)"
+        let result = await Shell.run(paths.launchctl, ["kickstart"] + (killingRunning ? ["-k"] : []) + [target], environment: paths.childEnvironment)
         guard result.succeeded else {
-            throw ServiceError(message: "launchctl kickstart \(label) failed: \(result.stderr)")
+            throw ServiceError(message: "launchctl kickstart \(agent.label) failed: \(result.stderr)")
         }
     }
 

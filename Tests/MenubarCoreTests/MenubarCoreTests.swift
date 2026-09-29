@@ -69,3 +69,37 @@ import Testing
         #expect(ProfileDiscovery.displayName(forProfile: "komorebi-laptop.json") == "laptop")
     }
 }
+
+@Suite struct LaunchAgentPlistTests {
+    private func plist(_ kind: LaunchAgentPlist.Kind, startsAtLogin: Bool) -> [String: Any] {
+        LaunchAgentPlist.make(kind: kind, label: "l", programArguments: ["/bin/x", "-c", "rc"],
+                              environment: ["PATH": "/bin"], log: "/tmp/x.log", startsAtLogin: startsAtLogin)
+    }
+
+    @Test func offHasNeitherRunAtLoadNorKeepAlive() {
+        // Any KeepAlive implies RunAtLoad, so it would start at login anyway.
+        for kind in [LaunchAgentPlist.Kind.komorebi, .skhd] {
+            let off = plist(kind, startsAtLogin: false)
+            #expect(off["RunAtLoad"] == nil)
+            #expect(off["KeepAlive"] == nil)
+            #expect(!LaunchAgentPlist.startsAtLogin(off))
+            #expect(off["ProgramArguments"] as? [String] == ["/bin/x", "-c", "rc"])
+        }
+    }
+
+    @Test func onKeepsSkhdAliveAndLetsKomorebiStayStopped() {
+        let skhd = plist(.skhd, startsAtLogin: true)
+        #expect(skhd["RunAtLoad"] as? Bool == true)
+        #expect(skhd["KeepAlive"] as? Bool == true)
+
+        let komorebi = plist(.komorebi, startsAtLogin: true)
+        #expect(komorebi["KeepAlive"] as? [String: Bool] == ["SuccessfulExit": false])
+        #expect(LaunchAgentPlist.startsAtLogin(komorebi))
+    }
+
+    @Test func readsPlistsWrittenByTheOldInstallScript() {
+        #expect(LaunchAgentPlist.startsAtLogin(["RunAtLoad": true, "KeepAlive": true]))
+        #expect(LaunchAgentPlist.startsAtLogin(["KeepAlive": ["SuccessfulExit": false]]))
+        #expect(!LaunchAgentPlist.startsAtLogin(["RunAtLoad": false]))
+    }
+}

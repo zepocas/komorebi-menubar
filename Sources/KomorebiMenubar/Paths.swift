@@ -8,7 +8,13 @@ struct Paths: Sendable {
     let configDir: URL
     let dataDir: URL
     let komorebic: URL
+    let komorebi: URL?
+    let skhd: URL?
+    /// `<config dir>/skhdrc` if it exists, otherwise `~/.config/skhd/skhdrc`.
+    let skhdConfig: URL
     let launchctl = URL(fileURLWithPath: "/bin/launchctl")
+    /// The directories searched above, as a PATH for child processes and launchd jobs.
+    let searchPath: String
     /// Environment handed to every child process.
     let childEnvironment: [String: String]
 
@@ -25,22 +31,28 @@ struct Paths: Sendable {
         let searchDirs = [home.appendingPathComponent(".local/bin").path, "/opt/homebrew/bin", "/usr/local/bin"]
             + (environment["PATH"]?.split(separator: ":").map(String.init) ?? [])
             + ["/usr/bin", "/bin", "/usr/sbin", "/sbin"]
-        func find(_ name: String, fallback: String) -> URL {
-            let match = searchDirs
+        func find(_ name: String) -> URL? {
+            searchDirs
                 .map { URL(fileURLWithPath: $0).appendingPathComponent(name) }
                 .first { fileManager.isExecutableFile(atPath: $0.path) }
-            return match ?? URL(fileURLWithPath: fallback)
         }
 
+        let searchPath = Array(NSOrderedSet(array: searchDirs)).compactMap { $0 as? String }.joined(separator: ":")
         var childEnvironment = environment
-        childEnvironment["PATH"] = Array(NSOrderedSet(array: searchDirs)).compactMap { $0 as? String }.joined(separator: ":")
+        childEnvironment["PATH"] = searchPath
         childEnvironment["KOMOREBI_CONFIG_HOME"] = configDir.path
+
+        let skhdConfig = configDir.appendingPathComponent("skhdrc")
 
         return Paths(
             home: home,
             configDir: configDir,
             dataDir: home.appendingPathComponent("Library/Application Support/komorebi", isDirectory: true),
-            komorebic: find("komorebic", fallback: home.appendingPathComponent(".local/bin/komorebic").path),
+            komorebic: find("komorebic") ?? home.appendingPathComponent(".local/bin/komorebic"),
+            komorebi: find("komorebi"),
+            skhd: find("skhd"),
+            skhdConfig: fileManager.fileExists(atPath: skhdConfig.path) ? skhdConfig : home.appendingPathComponent(".config/skhd/skhdrc"),
+            searchPath: searchPath,
             childEnvironment: childEnvironment
         )
     }
