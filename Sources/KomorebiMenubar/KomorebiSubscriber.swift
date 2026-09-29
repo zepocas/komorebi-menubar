@@ -11,6 +11,7 @@ final class KomorebiSubscriber: @unchecked Sendable {
     private let queue = DispatchQueue(label: "io.github.zepocas.komorebi-menubar.subscriber")
     private let onState: @Sendable (KomorebiState) -> Void
     private var listenFD: Int32 = -1
+    private var socketInode: ino_t = 0
     private var source: DispatchSourceRead?
 
     init(dataDir: URL, onState: @escaping @Sendable (KomorebiState) -> Void) {
@@ -51,6 +52,7 @@ final class KomorebiSubscriber: @unchecked Sendable {
         }
         _ = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
         listenFD = fd
+        socketInode = inode(of: socketPath) ?? 0
 
         let source = DispatchSource.makeReadSource(fileDescriptor: fd, queue: queue)
         source.setEventHandler { [weak self] in self?.acceptPending() }
@@ -62,7 +64,16 @@ final class KomorebiSubscriber: @unchecked Sendable {
     func stop() {
         source?.cancel()
         source = nil
-        unlink(socketPath)
+        // A newer copy of the app replaces the socket when it starts, while this one is quitting.
+        // Only remove the socket if it's still ours.
+        if inode(of: socketPath) == socketInode {
+            unlink(socketPath)
+        }
+    }
+
+    private func inode(of path: String) -> ino_t? {
+        var info = stat()
+        return stat(path, &info) == 0 ? info.st_ino : nil
     }
 
     private func acceptPending() {
