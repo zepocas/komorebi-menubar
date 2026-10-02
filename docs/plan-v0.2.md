@@ -43,6 +43,12 @@ Decisions from the design review on 2026-09-28. Each phase ends with a check.
 - **Check:** unit tests for label markers and layout decoding; manual checks for switching, layout change and pause, verified through the state.
 
 ### 3 · Setup inside the app
+
+> **Partly done (2026-09-29):** `LaunchAgents.swift` generates the plists and the menu has
+> Start at Login ▸ Komorebi Menubar / komorebi / skhd, each separate; the scripts and templates are
+> gone. Plain plists, not `SMAppService`, which pins ad-hoc signed apps to one build. Foreign skhd
+> jobs are detected and reported, not yet replaced; no `--install-agents` flags.
+
 - A Swift `LaunchAgentInstaller` generates the plists, replacing `launchd/*.plist.in` and `scripts/install-agents.sh`.
 - Foreign-job handling: detect, confirm, back up, and use `brew services stop` for brew jobs.
 - Add the `--install-agents` / `--uninstall-agents` flags and the Start at Login menu. The Makefile delegates to the app. Update the README.

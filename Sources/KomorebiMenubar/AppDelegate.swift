@@ -18,6 +18,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var connectTask: Task<Void, Never>?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Only one menubar item: the newest copy wins and asks older ones to quit. `brew upgrade`
+        // both reopens the app and kickstarts its login agent, and deferring to the older copy
+        // would lose both while the old one is still quitting. A clean quit exits 0, so the login
+        // agent's KeepAlive leaves it be.
+        let me = NSRunningApplication.current.processIdentifier
+        for other in NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier ?? "")
+        where other.processIdentifier != me {
+            other.terminate()
+        }
+
         menu.delegate = self
         menu.autoenablesItems = false
         statusItem = StatusItemController(menu: menu)
@@ -89,11 +99,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// (`komorebic replace-configuration` would be the live alternative, but it panics komorebi
     /// in the current komorebi-for-mac build.)
     func activateProfile(_ profile: URL) {
-        run("profile") { [services, profiles] in
+        run("profile", failure: "Couldn't switch profile") { [services, profiles] in
             let running = ProcessLookup.pid(named: "komorebi") != nil
             if running {
                 // Fail before touching the link if komorebi can't be restarted to pick it up.
-                try await services.requireAgent(ServiceController.komorebiAgent)
+                try services.agents.prepare(.komorebi)
             }
             try profiles.activate(profile)
             if running {
@@ -103,14 +113,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func restartKomorebi() {
-        run("komorebi") { [services] in try await services.restartKomorebi() }
+        run("komorebi", failure: "Couldn't start komorebi") { [services] in try await services.restartKomorebi() }
     }
 
     func restartSkhd() {
-        run("skhd") { [services] in try await services.restartSkhd() }
+        run("skhd", failure: "Couldn't start skhd") { [services] in try await services.restartSkhd() }
     }
 
-    private func run(_ name: String, _ action: @escaping @Sendable () async throws -> Void) {
+    func toggleStartsAtLogin(_ agent: LaunchAgents.Agent) {
+        let agents = services.agents
+        let on = !agents.startsAtLogin(agent)
+        run("login", failure: "Couldn't change Start at Login") {
+            try await agents.setStartsAtLogin(agent, on)
+        }
+    }
+
+    private func run(_ name: String, failure: String, _ action: @escaping @Sendable () async throws -> Void) {
         guard !busy.contains(name) else { return }
         busy.insert(name)
         Task {
@@ -121,7 +139,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             do {
                 try await action()
             } catch {
-                presentError("Couldn't \(name == "profile" ? "switch profile" : "restart \(name)")", error)
+                presentError(failure, error)
             }
         }
     }

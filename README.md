@@ -48,28 +48,20 @@ The workspace number should now appear in the menubar. The app must live in `/Ap
 both methods do. On macOS 27, menubar managers like Thaw can drop items from apps in
 `~/Applications` (see [Troubleshooting](#troubleshooting)).
 
-With only this step, the icon and profile list work. Restarting komorebi or skhd from the menu,
-and switching profiles while komorebi runs, need step 2.
+### 2. Start at login
 
-### 2. Start everything at login (recommended)
+In the app's menu, open **Start at Login** and tick what you want started at login. Each one is
+separate:
 
-```sh
-make agents                  # from a source checkout
-scripts/install-agents.sh    # Homebrew install: run from a clone, it uses the app in /Applications
-```
+| Item | LaunchAgent | Runs | When on |
+|---|---|---|---|
+| **Komorebi Menubar** | `io.github.zepocas.komorebi-menubar` | the app | restarts after a crash; stays quit after *Quit* |
+| **komorebi** | `io.github.zepocas.komorebi` | `komorebi --config <config dir>/active.json` | restarts after a crash; stays stopped after `komorebic stop` |
+| **skhd** | `io.github.zepocas.skhd` | `skhd -c <skhdrc>` | always kept running |
 
-`make agents` rebuilds and reinstalls the app first. If you installed with Homebrew, run
-`scripts/install-agents.sh` instead so the cask's app stays in place.
-
-This installs three LaunchAgents into `~/Library/LaunchAgents` and loads them:
-
-| Agent | Runs | Behaviour |
-|---|---|---|
-| `io.github.zepocas.komorebi` | `komorebi --config <config dir>/active.json` | restarts after a crash; stays stopped after `komorebic stop` |
-| `io.github.zepocas.skhd` | `skhd -c <skhdrc>` | always kept running |
-| `io.github.zepocas.komorebi-menubar` | the app | restarts after a crash; stays quit after *Quit* |
-
-This stops any komorebi or skhd you started by hand, then starts them under launchd.
+Changes take effect at your next login. **Start komorebi** / **Start skhd** in the menu work either
+way: they install the agent if needed (not starting at login) and start the daemon through launchd.
+The first time, that also stops a komorebi or skhd you started by hand, so two don't run.
 
 ### 3. Grant permissions
 
@@ -79,7 +71,7 @@ komorebi and skhd now run as their own processes instead of under your terminal.
 - **Accessibility:** `komorebi` (e.g. `~/.local/bin/komorebi`) and `skhd` (e.g. `/opt/homebrew/bin/skhd`)
 - **Screen Recording:** `komorebi`
 
-Then use **Restart komorebi** / **Restart skhd** from the Komorebi Menubar menu. If you upgrade skhd with
+Then use **Start**/**Restart komorebi** and **skhd** from the Komorebi Menubar menu. If you upgrade skhd with
 Homebrew, its real path changes and you may need to grant it again.
 
 ### 4. Menubar managers (Thaw, Ice, Bartender)
@@ -101,7 +93,7 @@ using the manager's layout settings or ⌘-drag in the menubar.
 |---|---|
 | komorebi / skhd status | Whether each is running, with its PID |
 | **Profile ▸** | Switches the komorebi config (see below) |
-| **Restart komorebi** | `komorebic stop` (restores hidden windows), then starts the launchd agent again. Shows **Start komorebi** when it isn't running |
+| **Restart komorebi** | `komorebic stop` (restores hidden windows), then starts it through its launchd agent. Shows **Start komorebi** when it isn't running |
 | **Restart skhd** | Restarts the skhd agent |
 | **Open Config Folder** | Opens your komorebi config directory |
 
@@ -123,12 +115,13 @@ restarts komorebi.
 
 ## Configuration
 
-- **Config directory:** `$KOMOREBI_CONFIG_HOME` if set, otherwise `~/.config/komorebi`. Set it
-  before running `make agents`; the agents get the value written into them.
+- **Config directory:** `$KOMOREBI_CONFIG_HOME` if set, otherwise `~/.config/komorebi`.
 - **skhd config:** `<config dir>/skhdrc` if it exists, otherwise `~/.config/skhd/skhdrc`.
-- **Agent names:** `io.github.zepocas.*`. To use your own prefix, rename them in `launchd/*.plist.in`,
-  `scripts/install-agents.sh` and `ServiceController.swift`.
-- After changing any of the above, run `make agents` again.
+- **Binaries:** `komorebi`, `komorebic` and `skhd` are looked up in `~/.local/bin`,
+  `/opt/homebrew/bin`, `/usr/local/bin` and your `PATH`.
+- **Agent names:** `io.github.zepocas.*`, in `Sources/KomorebiMenubar/LaunchAgents.swift`.
+- The agents get these paths written into them. After changing one, toggle **Start at Login** for
+  that item off and on again to rewrite its agent.
 
 ## Troubleshooting
 
@@ -138,8 +131,9 @@ menubar manager. On macOS 27, Thaw can remove other apps' items
 ([thaw-app/Thaw#1135](https://github.com/thaw-app/Thaw/issues/1135)). Quitting Thaw briefly tells
 you whether it's the cause.
 
-**"The io.github.zepocas.komorebi LaunchAgent isn't loaded".**
-Restart and profile switching go through launchd. Run `make agents`.
+**"skhd is also started by the com.koekeishiya.skhd LaunchAgent".**
+skhd was installed as a service by another tool too, so it would run twice. Remove that one
+(`skhd --uninstall-service` or `brew services stop skhd`) and try again.
 
 **komorebi doesn't come back after a restart.**
 Check `~/Library/Logs/komorebi.log`. The message `failed to request screen capability` means
@@ -156,12 +150,13 @@ launchctl print gui/$(id -u)/io.github.zepocas.komorebi | grep -E 'state|pid|las
 ## Uninstall
 
 ```sh
-make uninstall        # unloads the agents and removes /Applications/KomorebiMenubar.app
-brew uninstall --cask --zap komorebi-menubar    # if you installed with Homebrew (--zap also removes its login agent)
+make uninstall        # removes /Applications/KomorebiMenubar.app
+brew uninstall --cask --zap komorebi-menubar    # if you installed with Homebrew (--zap also removes its agents)
 ```
 
-After this, start komorebi and skhd by hand again (`komorebic start`, `skhd -c …`). You can
-delete `<config dir>/active.json` if you don't need it.
+Untick everything under **Start at Login** first if you built from source, or remove the
+`io.github.zepocas.*` plists from `~/Library/LaunchAgents`. Then start komorebi and skhd by hand again
+(`komorebic start`, `skhd -c …`). You can delete `<config dir>/active.json` if you don't need it.
 
 ## How it works
 
@@ -173,7 +168,15 @@ delete `<config dir>/active.json` if you don't need it.
 - **Reconnecting:** every 2 s the app checks for the `komorebi` process, which is cheap. A new PID
   means a fresh komorebi that has forgotten the subscription, so the app subscribes again and
   loads `komorebic state` straight away.
-- **Why restarts go through launchd:** if the app launched komorebi or skhd itself, macOS would
+- **Start at Login** only rewrites the agent plists, and they take effect at the next login. It never
+  unloads a running job: the app's own agent may be running the app itself. When off, komorebi's and
+  skhd's plists stay installed with neither `RunAtLoad` nor `KeepAlive`, because any `KeepAlive`
+  implies `RunAtLoad`. That way the menu can still start them through launchd. It's a plain plist, not
+  `SMAppService`: the app is ad-hoc signed, and `SMAppService` pins the registration to the exact
+  build, so the agent would stop launching after any update.
+- **One copy:** the newest copy of the app asks older ones to quit, which covers `brew upgrade`
+  reopening the app while its login agent restarts it too.
+- **Why starts go through launchd:** if the app launched komorebi or skhd itself, macOS would
   treat the app as their "responsible process" and check *the app's* Accessibility and Screen
   Recording permissions. Run by launchd, they use their own permissions, so the menubar app needs none.
 
@@ -188,13 +191,12 @@ delete `<config dir>/active.json` if you don't need it.
 ## Development
 
 ```
-Sources/MenubarCore/        decoding, label formatting, profile discovery (unit tested)
-Sources/KomorebiMenubar/    AppKit app: socket subscriber, process watcher, menu, launchd control
+Sources/MenubarCore/        decoding, label formatting, profile discovery, agent plists (unit tested)
+Sources/KomorebiMenubar/    AppKit app: socket subscriber, process watcher, menu, launchd agents
 Tests/MenubarCoreTests/     Swift Testing suite and a JSON fixture
-launchd/                      LaunchAgent templates (@PLACEHOLDERS@ filled in by install-agents.sh)
 Resources/                    Info.plist, AppIcon.svg (icon source) and the generated AppIcon.icns
 packaging/                    Homebrew cask template
-scripts/                      bundle.sh (builds the .app), install-agents.sh, make-icon.sh, bump-cask.sh
+scripts/                      bundle.sh (builds the .app), make-icon.sh, bump-cask.sh
 ```
 
 | Command | Does |
@@ -203,8 +205,7 @@ scripts/                      bundle.sh (builds the .app), install-agents.sh, ma
 | `make test` | unit tests |
 | `make install` | release build, installed to `/Applications` |
 | `make run` | install and open |
-| `make agents` / `make uninstall-agents` | install / remove the LaunchAgents |
-| `make uninstall` | remove the agents and the app |
+| `make uninstall` | remove the app |
 | `make icon` | regenerate `AppIcon.icns` from `AppIcon.svg` |
 | `make clean` | delete build output |
 

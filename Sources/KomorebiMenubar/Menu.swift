@@ -20,6 +20,9 @@ extension AppDelegate: NSMenuDelegate {
         menu.addItem(serviceItem(name: "skhd", running: watcher.skhdPID != nil) { [weak self] in self?.restartSkhd() })
         menu.addItem(.separator())
 
+        let startup = NSMenuItem(title: "Start at Login", action: nil, keyEquivalent: "")
+        startup.submenu = startupMenu()
+        menu.addItem(startup)
         menu.addItem(ActionMenuItem(title: "Open Config Folder") { [paths] in
             NSWorkspace.shared.open(paths.configDir)
         })
@@ -43,6 +46,27 @@ extension AppDelegate: NSMenuDelegate {
             return item
         }
         return ActionMenuItem(title: "\(running ? "Restart" : "Start") \(name)", handler: action)
+    }
+
+    private func startupMenu() -> NSMenu {
+        let submenu = NSMenu()
+        submenu.autoenablesItems = false
+        let agents = services.agents
+        let items: [(String, LaunchAgents.Agent, URL?)] = [
+            ("Komorebi Menubar", .menubar, Bundle.main.executableURL),
+            ("komorebi", .komorebi, paths.komorebi),
+            ("skhd", .skhd, paths.skhd),
+        ]
+        for (title, agent, binary) in items {
+            let item = ActionMenuItem(title: title) { [weak self] in self?.toggleStartsAtLogin(agent) }
+            item.state = agents.startsAtLogin(agent) ? .on : .off
+            item.isEnabled = binary != nil && !busy.contains("login")
+            if binary == nil {
+                item.toolTip = "\(title) isn't installed in ~/.local/bin, /opt/homebrew/bin or /usr/local/bin."
+            }
+            submenu.addItem(item)
+        }
+        return submenu
     }
 
     private func profilesMenu() -> NSMenu {
