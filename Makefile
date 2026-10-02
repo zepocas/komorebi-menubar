@@ -23,12 +23,20 @@ test:
 bundle:
 	scripts/bundle.sh
 
-# Replaces the installed app, quitting a running copy first.
+AGENT_LABEL := io.github.zepocas.komorebi-menubar
+AGENT_PLIST := $(HOME)/Library/LaunchAgents/$(AGENT_LABEL).plist
+LAUNCHD_DOMAIN = gui/$(shell id -u)
+
+# Replaces the installed app, quitting a running copy first. If the launchd agent is installed it is
+# unloaded for the swap (KeepAlive would respawn the app from a half-copied bundle) and reloaded
+# afterwards, which also clears the stale code requirement launchd keeps for the replaced binary.
 install: bundle
+	-[ -f "$(AGENT_PLIST)" ] && launchctl bootout $(LAUNCHD_DOMAIN)/$(AGENT_LABEL) 2>/dev/null
 	-pkill -x $(APP_NAME)
 	mkdir -p $(INSTALL_DIR)
 	rm -rf "$(APP_PATH)"
 	cp -R build/$(APP_NAME).app "$(APP_PATH)"
+	@if [ -f "$(AGENT_PLIST)" ]; then launchctl bootstrap $(LAUNCHD_DOMAIN) "$(AGENT_PLIST)" && echo "Reloaded $(AGENT_LABEL)"; fi
 	@echo "Installed $(APP_PATH)"
 
 run: install
