@@ -51,10 +51,21 @@ extension AppDelegate: NSMenuDelegate {
         let title = NSMutableAttributedString(string: name)
         title.append(NSAttributedString(string: " — \(state.status)", attributes: [.foregroundColor: NSColor.secondaryLabelColor]))
         item.attributedTitle = title
-        item.image = NSImage(systemSymbolName: "circle.fill", accessibilityDescription: nil)?
-            .withSymbolConfiguration(.init(pointSize: 8, weight: .regular).applying(.init(paletteColors: [state.isRunning ? .systemGreen : .systemRed])))
+        item.image = Self.statusDot(running: state.isRunning)
         item.submenu = submenu
         return item
+    }
+
+    /// Drawn by hand rather than via an SF Symbol: symbol images are templates, which menus
+    /// can render monochrome, dropping the green/red tint.
+    private static func statusDot(running: Bool) -> NSImage {
+        let image = NSImage(size: NSSize(width: 10, height: 10), flipped: false) { rect in
+            (running ? NSColor.systemGreen : NSColor.systemRed).setFill()
+            NSBezierPath(ovalIn: rect.insetBy(dx: 1, dy: 1)).fill()
+            return true
+        }
+        image.isTemplate = false
+        return image
     }
 
     private func startupMenu() -> NSMenu {
