@@ -7,17 +7,19 @@ extension AppDelegate: NSMenuDelegate {
         watcher.poll()
         menu.removeAllItems()
 
-        menu.addItem(serviceStatusItem(name: "komorebi", pid: watcher.komorebiPID))
-        menu.addItem(serviceStatusItem(name: "skhd", pid: watcher.skhdPID))
-        menu.addItem(.separator())
-
         let profilesItem = NSMenuItem(title: "Profile", action: nil, keyEquivalent: "")
         profilesItem.submenu = profilesMenu()
         menu.addItem(profilesItem)
         menu.addItem(.separator())
 
-        menu.addItem(serviceItem(name: "komorebi", running: watcher.komorebiPID != nil) { [weak self] in self?.restartKomorebi() })
-        menu.addItem(serviceItem(name: "skhd", running: watcher.skhdPID != nil) { [weak self] in self?.restartSkhd() })
+        menu.addItem(serviceMenu(name: "komorebi", pid: watcher.komorebiPID,
+                                 start: { [weak self] in self?.startKomorebi() },
+                                 restart: { [weak self] in self?.restartKomorebi() },
+                                 stop: { [weak self] in self?.stopKomorebi() }))
+        menu.addItem(serviceMenu(name: "skhd", pid: watcher.skhdPID,
+                                 start: { [weak self] in self?.startSkhd() },
+                                 restart: { [weak self] in self?.restartSkhd() },
+                                 stop: { [weak self] in self?.stopSkhd() }))
         menu.addItem(.separator())
 
         let startup = NSMenuItem(title: "Start at Login", action: nil, keyEquivalent: "")
@@ -31,21 +33,28 @@ extension AppDelegate: NSMenuDelegate {
         })
     }
 
-    private func serviceStatusItem(name: String, pid: pid_t?) -> NSMenuItem {
-        let item = NSMenuItem(title: pid.map { "\(name) — running (pid \($0))" } ?? "\(name) — not running", action: nil, keyEquivalent: "")
-        item.isEnabled = false
-        item.image = NSImage(systemSymbolName: "circle.fill", accessibilityDescription: nil)?
-            .withSymbolConfiguration(.init(pointSize: 8, weight: .regular).applying(.init(paletteColors: [pid == nil ? .systemRed : .systemGreen])))
-        return item
-    }
+    /// "● name — status ▸ Stop / Start, Restart".
+    private func serviceMenu(name: String, pid: pid_t?, start: @escaping () -> Void, restart: @escaping () -> Void, stop: @escaping () -> Void) -> NSMenuItem {
+        let state = ServiceMenuState(pid: pid, activity: busy[name])
+        let submenu = NSMenu()
+        submenu.autoenablesItems = false
 
-    private func serviceItem(name: String, running: Bool, action: @escaping () -> Void) -> NSMenuItem {
-        if busy.contains(name) {
-            let item = NSMenuItem(title: "\(running ? "Restarting" : "Starting") \(name)…", action: nil, keyEquivalent: "")
-            item.isEnabled = false
-            return item
-        }
-        return ActionMenuItem(title: "\(running ? "Restart" : "Start") \(name)", handler: action)
+        let toggle = ActionMenuItem(title: state.toggleTitle, handler: state.toggleStops ? stop : start)
+        toggle.isEnabled = state.isToggleEnabled
+        submenu.addItem(toggle)
+
+        let restartItem = ActionMenuItem(title: "Restart", handler: restart)
+        restartItem.isEnabled = state.isRestartEnabled
+        submenu.addItem(restartItem)
+
+        let item = NSMenuItem(title: name, action: nil, keyEquivalent: "")
+        let title = NSMutableAttributedString(string: name)
+        title.append(NSAttributedString(string: " — \(state.status)", attributes: [.foregroundColor: NSColor.secondaryLabelColor]))
+        item.attributedTitle = title
+        item.image = NSImage(systemSymbolName: "circle.fill", accessibilityDescription: nil)?
+            .withSymbolConfiguration(.init(pointSize: 8, weight: .regular).applying(.init(paletteColors: [state.isRunning ? .systemGreen : .systemRed])))
+        item.submenu = submenu
+        return item
     }
 
     private func startupMenu() -> NSMenu {
@@ -60,7 +69,7 @@ extension AppDelegate: NSMenuDelegate {
         for (title, agent, binary) in items {
             let item = ActionMenuItem(title: title) { [weak self] in self?.toggleStartsAtLogin(agent) }
             item.state = agents.startsAtLogin(agent) ? .on : .off
-            item.isEnabled = binary != nil && !busy.contains("login")
+            item.isEnabled = binary != nil && busy["login"] == nil
             if binary == nil {
                 item.toolTip = "\(title) isn't installed in ~/.local/bin, /opt/homebrew/bin or /usr/local/bin."
             }
@@ -87,7 +96,7 @@ extension AppDelegate: NSMenuDelegate {
             }
             item.toolTip = fileName
             item.state = fileName == active ? .on : .off
-            item.isEnabled = !busy.contains("profile")
+            item.isEnabled = busy["profile"] == nil
             submenu.addItem(item)
         }
         return submenu

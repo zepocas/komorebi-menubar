@@ -9,8 +9,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let watcher = ServiceWatcher()
     let menu = NSMenu()
 
-    /// Actions currently running, e.g. "komorebi", used to show progress in the menu.
-    var busy: Set<String> = []
+    /// Actions currently running, keyed by e.g. "komorebi", with a progress verb like "restarting"
+    /// for the menu.
+    var busy: [String: String] = [:]
 
     private var statusItem: StatusItemController!
     private var subscriber: KomorebiSubscriber?
@@ -112,12 +113,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    func startKomorebi() {
+        run("komorebi", doing: "starting", failure: "Couldn't start komorebi") { [services] in try await services.restartKomorebi() }
+    }
+
     func restartKomorebi() {
-        run("komorebi", failure: "Couldn't start komorebi") { [services] in try await services.restartKomorebi() }
+        run("komorebi", doing: "restarting", failure: "Couldn't start komorebi") { [services] in try await services.restartKomorebi() }
+    }
+
+    func stopKomorebi() {
+        run("komorebi", doing: "stopping", failure: "Couldn't stop komorebi") { [services] in try await services.stopKomorebi() }
+    }
+
+    func stopSkhd() {
+        run("skhd", doing: "stopping", failure: "Couldn't stop skhd") { [services] in try await services.stopSkhd() }
+    }
+
+    func startSkhd() {
+        run("skhd", doing: "starting", failure: "Couldn't start skhd") { [services] in try await services.restartSkhd() }
     }
 
     func restartSkhd() {
-        run("skhd", failure: "Couldn't start skhd") { [services] in try await services.restartSkhd() }
+        run("skhd", doing: "restarting", failure: "Couldn't start skhd") { [services] in try await services.restartSkhd() }
     }
 
     func toggleStartsAtLogin(_ agent: LaunchAgents.Agent) {
@@ -128,12 +145,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func run(_ name: String, failure: String, _ action: @escaping @Sendable () async throws -> Void) {
-        guard !busy.contains(name) else { return }
-        busy.insert(name)
+    private func run(_ name: String, doing: String = "working", failure: String, _ action: @escaping @Sendable () async throws -> Void) {
+        guard busy[name] == nil else { return }
+        busy[name] = doing
         Task {
             defer {
-                busy.remove(name)
+                busy[name] = nil
                 watcher.poll()
             }
             do {

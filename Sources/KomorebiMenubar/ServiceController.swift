@@ -28,20 +28,24 @@ struct ServiceController: Sendable {
         return try KomorebiDecoder.state(fromStateJSON: result.stdout)
     }
 
+    func stopKomorebi() async throws {
+        guard let pid = ProcessLookup.pid(named: "komorebi") else { return }
+        // `stop` restores hidden windows before exiting, which a plain kill wouldn't. komorebi can
+        // wedge after an internal panic and ignore commands, so fall back to SIGTERM.
+        let stopped = await Shell.run(paths.komorebic, ["stop"], environment: paths.childEnvironment).succeeded
+        let exited = stopped ? await wait(timeout: .seconds(5)) { ProcessLookup.pid(named: "komorebi") == nil } : false
+        if !exited {
+            kill(pid, SIGTERM)
+            try await waitFor("komorebi to exit", timeout: .seconds(5)) { ProcessLookup.pid(named: "komorebi") == nil }
+        }
+    }
+
+    /// Starting is a restart of a service that isn't running.
     func restartKomorebi() async throws {
         // Before stopping anything, so a missing komorebi binary doesn't leave komorebi down.
         try agents.prepare(.komorebi)
 
-        if let pid = ProcessLookup.pid(named: "komorebi") {
-            // `stop` restores hidden windows before exiting, which a plain kill wouldn't. komorebi can
-            // wedge after an internal panic and ignore commands, so fall back to SIGTERM.
-            let stopped = await Shell.run(paths.komorebic, ["stop"], environment: paths.childEnvironment).succeeded
-            let exited = stopped ? await wait(timeout: .seconds(5)) { ProcessLookup.pid(named: "komorebi") == nil } : false
-            if !exited {
-                kill(pid, SIGTERM)
-                try await waitFor("komorebi to exit", timeout: .seconds(5)) { ProcessLookup.pid(named: "komorebi") == nil }
-            }
-        }
+        try await stopKomorebi()
         // Loading an agent that starts at login already starts komorebi; kickstart covers the rest.
         try await agents.load(.komorebi)
         try await kickstart(.komorebi, killingRunning: false)
@@ -51,6 +55,18 @@ struct ServiceController: Sendable {
     }
 
     // MARK: skhd
+
+    func stopSkhd() async throws {
+        guard let pid = ProcessLookup.pid(named: "skhd") else { return }
+        if await agents.isLoaded(.skhd) {
+            // Its agent may keep it alive (Start at Login), which would relaunch it after a plain
+            // kill. Unloading stops it for good; Start loads the agent again.
+            try await agents.unload(.skhd)
+        } else {
+            kill(pid, SIGTERM)
+        }
+        try await waitFor("skhd to exit", timeout: .seconds(5)) { ProcessLookup.pid(named: "skhd") == nil }
+    }
 
     func restartSkhd() async throws {
         try await agents.requireNoForeignSkhd()
