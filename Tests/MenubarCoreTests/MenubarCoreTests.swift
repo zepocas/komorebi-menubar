@@ -103,3 +103,42 @@ import Testing
         #expect(!LaunchAgentPlist.startsAtLogin(["RunAtLoad": false]))
     }
 }
+
+@Suite struct ServiceMenuStateTests {
+    @Test func runningOffersStopAndRestart() {
+        let state = ServiceMenuState(pid: 42, activity: nil)
+
+        #expect(state.status == "running (pid 42)")
+        #expect(state.isRunning)
+        #expect(state.toggleTitle == "Stop")
+        #expect(state.toggleStops)
+        #expect(state.isToggleEnabled)
+        #expect(state.isRestartEnabled)
+    }
+
+    @Test func stoppedOffersStartAndGreysOutRestart() {
+        let state = ServiceMenuState(pid: nil, activity: nil)
+
+        #expect(state.status == "not running")
+        #expect(!state.isRunning)
+        #expect(state.toggleTitle == "Start")
+        #expect(!state.toggleStops)
+        #expect(state.isToggleEnabled)
+        #expect(!state.isRestartEnabled)
+    }
+
+    @Test func activityShowsTheVerbAndLocksTheMenu() {
+        for pid in [Int32?.none, 42] {
+            let state = ServiceMenuState(pid: pid, activity: "restarting")
+
+            #expect(state.status == "restarting…")
+            #expect(!state.isToggleEnabled)
+            #expect(!state.isRestartEnabled)
+        }
+    }
+
+    @Test func activityDoesNotChangeWhichActionTheToggleOffers() {
+        #expect(ServiceMenuState(pid: 42, activity: "stopping").toggleTitle == "Stop")
+        #expect(ServiceMenuState(pid: nil, activity: "starting").toggleTitle == "Start")
+    }
+}

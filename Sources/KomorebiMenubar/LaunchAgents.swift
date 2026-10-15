@@ -79,6 +79,13 @@ struct LaunchAgents: Sendable {
         }
     }
 
+    func unload(_ agent: Agent) async throws {
+        let result = await Shell.run(paths.launchctl, ["bootout", "gui/\(getuid())/\(agent.label)"], environment: paths.childEnvironment)
+        guard result.succeeded else {
+            throw ServiceError(message: "launchctl bootout \(agent.label) failed: \(result.stderr)")
+        }
+    }
+
     func requireNoForeignSkhd() async throws {
         for label in Self.foreignSkhdLabels where await isLoaded(label: label) {
             throw ServiceError(message: "skhd is also started by the \(label) LaunchAgent, so it would run twice. Remove that one first: `skhd --uninstall-service` or `brew services stop skhd`.")
